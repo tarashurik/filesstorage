@@ -16,7 +16,8 @@ class UserCreate(UserBase):
 
 
 class UserRead(UserBase):
-    id: UUID
+    # id: UUID
+    id: int
     hashed_password: str
 
     class Config:

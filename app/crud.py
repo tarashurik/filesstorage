@@ -17,9 +17,10 @@ class UserCRUD:
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
 
-    def read(self, uuid: UUID) -> User:
+    # def read(self, uuid: UUID) -> User:
+    def read(self, user_id: int) -> User:
         query = self.db.query(User)
-        return query.filter(User.id == uuid).first()
+        return query.filter(User.id == user_id).first()
 
     def read_by_username(self, username: str):
         query = self.db.query(User)

@@ -10,7 +10,8 @@ from database import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    # id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(20), unique=True, index=True)
     email = Column(String(50))
     first_name = Column(String(20), nullable=True)
@@ -26,6 +27,8 @@ class File(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String)
     description = Column(String)
-    owner_id = Column(UUID, ForeignKey("users.id"))
+    # owner_id = Column(UUID, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
+
 
     owner = relationship("User", back_populates="files")
