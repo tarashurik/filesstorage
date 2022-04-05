@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import parse_obj_as
 from typing import List
 from uuid import UUID
 
+from auth import (
+    authenticate_user, credentials_error,
+    create_token,
+)
 from schemas import UserRead, UserCreate
 from crud import UserCRUD
 
@@ -15,10 +20,17 @@ router = APIRouter(prefix="/users", tags=["users"])
 #     db_speedsters = speedsters.all(skip=skip, max=max)
 #     return parse_obj_as(List[UserRead], db_speedsters)
 
+@router.post('/token')
+def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
+    user = authenticate_user(form_data.username, form_data.password, users)
+    if not user:
+        raise credentials_error
+    return create_token(user.username)
+
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, users: UserCRUD = Depends()):
-    db_user = users.read_by_email(email=user.email)
+    db_user = users.read_by_username(username=user.username)
 
     if db_user:
         raise HTTPException(
@@ -30,9 +42,9 @@ def create_user(user: UserCreate, users: UserCRUD = Depends()):
     return UserRead.from_orm(db_user)
 
 
-@router.get("/{user_id}", response_model=UserRead)
-def get_user(user_id: UUID, users: UserCRUD = Depends()):
-    db_user = users.read(user_id)
+@router.get("/{username}", response_model=UserRead)
+def get_user(username: str, users: UserCRUD = Depends()):
+    db_user = users.read_by_username(username)
 
     if db_user is None:
         raise HTTPException(

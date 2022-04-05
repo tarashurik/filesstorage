@@ -17,6 +17,7 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: UUID
+    hashed_password: str
 
     class Config:
         orm_mode = True

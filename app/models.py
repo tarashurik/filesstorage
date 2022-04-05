@@ -11,12 +11,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    username = Column(String(20))
-    email = Column(String(50), unique=True, index=True)
+    username = Column(String(20), unique=True, index=True)
+    email = Column(String(50))
     first_name = Column(String(20), nullable=True)
     last_name = Column(String(20), nullable=True)
-    password = Column(String)
-    # hashed_password = Column(String)
+    hashed_password = Column(String)
 
     files = relationship("File", back_populates="owner")
 
@@ -30,5 +29,3 @@ class File(Base):
     owner_id = Column(UUID, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="files")
-
-
