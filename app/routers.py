@@ -31,7 +31,17 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = De
 
 
 @users_router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def create_user(user: UserCreate, users: UserCRUD = Depends()):
+def create_user(username: str = Form(...),
+                email: str = Form(...),
+                first_name: Optional[str] = Form(None),
+                last_name: Optional[str] = Form(None),
+                password: str = Form(...),
+                users: UserCRUD = Depends()):
+    user = UserCreate(username=username,
+                      email=email,
+                      first_name=first_name,
+                      last_name=last_name,
+                      password=password)
     db_user = users.read_by_username(username=user.username)
     if db_user:
         raise HTTPException(
