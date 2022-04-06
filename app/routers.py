@@ -1,9 +1,9 @@
-import sys
-
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional
-from uuid import UUID
+# from uuid import UUID
 
 from auth import (
     authenticate_user,
@@ -18,11 +18,6 @@ from crud import UserCRUD, FileCRUD, UPLOAD_DIR, MAX_SIZE_MB
 users_router = APIRouter(prefix="/users", tags=["users"])
 files_router = APIRouter(prefix="/files", tags=["files"])
 
-
-# @router.get("/", response_model=List[UserRead])
-# def list_speedsters(skip: int = 0, max: int = 10, speedsters: UserCRUD = Depends()):
-#     db_speedsters = speedsters.all(skip=skip, max=max)
-#     return parse_obj_as(List[UserRead], db_speedsters)
 
 @users_router.post('/token')
 def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
@@ -56,7 +51,6 @@ def create_user(username: str = Form(...),
 
 @users_router.get("/logined_user", response_model=UserRead)
 def get_login_user(current_user: UserRead = Depends(get_current_user)):
-    print(current_user)
     return current_user
 
 
@@ -98,3 +92,19 @@ def upload_file(description: Optional[str] = Form(None),
     file_data = FileCreate(description=description, file=file, file_size_bytes=file_size_bytes)
     db_file = files.create(file_data=file_data, current_user=current_user)
     return FileRead.from_orm(db_file)
+
+
+@files_router.get("/")
+def get_user_files(current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
+    db_files = files.read_current_user_all(current_user=current_user)
+    print(db_files)
+    if not db_files:
+        raise HTTPException(
+            status_code=404,
+            detail="Files not found"
+        )
+    files_dict = dict()
+    for db_file in db_files:
+        files_dict[db_file.filename] = FileRead.from_orm(db_file)
+    content = jsonable_encoder(files_dict)
+    return JSONResponse(content=content)

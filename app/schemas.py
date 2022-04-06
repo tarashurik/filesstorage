@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import UploadFile, File as File_
 from pydantic import BaseModel
-from uuid import UUID
+# from uuid import UUID
 
 
 class Token(BaseModel):
@@ -27,7 +27,7 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     # id: UUID
-    id: int
+    id: int  # todo will change
     hashed_password: str
 
     class Config:

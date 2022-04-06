@@ -1,8 +1,8 @@
-from uuid import uuid4
+# from uuid import uuid4
 
 from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+# from sqlalchemy.dialects.postgresql import UUID
 
 from database import Base
 
@@ -11,7 +11,7 @@ class User(Base):
     __tablename__ = "users"
 
     # id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)  # todo will change
     username = Column(String(20), unique=True, index=True)
     email = Column(String(50))
     first_name = Column(String(20), nullable=True)
@@ -29,7 +29,7 @@ class File(Base):
     file_dir = Column(String)
     description = Column(String(100))
     # owner_id = Column(UUID, ForeignKey("users.id"))
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))  # todo will change
     content_type = Column(String)
     file_size_bytes = Column(String)
 

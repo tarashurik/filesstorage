@@ -1,12 +1,11 @@
 import os
 import shutil
 
-from uuid import UUID
-from fastapi import UploadFile, File as File_
+# from uuid import UUID
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 
 from models import User, File
@@ -26,17 +25,13 @@ class UserCRUD:
         self.db = db
 
     # def read(self, uuid: UUID) -> Optional[User]:
-    def read_by_id(self, user_id: int) -> Optional[User]:
+    def read_by_id(self, user_id: int) -> Optional[User]:  # todo will change
         query = self.db.query(User)
         return query.filter(User.id == user_id).first()
 
     def read_by_username(self, username: str) -> Optional[User]:
         query = self.db.query(User)
         return query.filter(User.username == username).first()
-
-    # def read_all(self, skip: int = 0, max: int = 100) -> List[User]:
-    #     query = self.db.query(User)
-    #     return query.offset(skip).limit(max).all()
 
     @staticmethod
     def get_hashed_password(password: str) -> str:
@@ -67,6 +62,10 @@ class UserCRUD:
 class FileCRUD:
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
+
+    def read_current_user_all(self, current_user: UserRead) -> Optional[List[File]]:
+        query = self.db.query(File)
+        return query.filter(File.owner_id == current_user.id)
 
     def read_by_id(self, file_id: int) -> Optional[File]:
         query = self.db.query(File)
