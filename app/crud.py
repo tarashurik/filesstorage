@@ -25,7 +25,7 @@ class UserCRUD:
         self.db = db
 
     # def read(self, uuid: UUID) -> Optional[User]:
-    def read_by_id(self, user_id: int) -> Optional[User]:  # todo will change
+    def read_by_id(self, user_id: int) -> Optional[User]:
         query = self.db.query(User)
         return query.filter(User.id == user_id).first()
 

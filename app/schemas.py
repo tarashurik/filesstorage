@@ -27,7 +27,7 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     # id: UUID
-    id: int  # todo will change
+    id: int
     hashed_password: str
 
     class Config:

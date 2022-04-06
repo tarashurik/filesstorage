@@ -123,5 +123,5 @@ def delete_file(filename: str, current_user: UserRead = Depends(get_current_user
             return f'File {filename} successfully deleted'
     raise HTTPException(
         status_code=404,
-        detail=f'File "{filename}" not found. There are no file with such name in your repository'
+        detail=f"File '{filename}' not found. There are no file with such name in your repository"
     )
