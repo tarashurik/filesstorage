@@ -1,15 +1,16 @@
 version: "3.9"
 services:
 
-  web:
+  fastapi:
     build: ./app
-    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    container_name: fastapi
+    command: uvicorn app.main:app --host=localhost --reload
     volumes:
       - ./app:/usr/src/app
     ports:
-      - 8004:8000
+      - "8004:8000"
 #    environment:
-#      - DATABASE_URL=postgresql://postgres:postgres@db:5432/foo
+#      - DATABASE_URL=postgresql://postgres:postgres@localhost:5432/db
     depends_on:
       - db
 
