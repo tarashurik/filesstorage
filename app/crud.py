@@ -16,6 +16,7 @@ from schemas import UserCreate, UserRead, FileCreate
 load_dotenv()
 
 UPLOAD_DIR = os.environ.get('UPLOAD_FILES_DIR')
+MAX_SIZE_MB = int(os.environ.get('MAX_SIZE_UPLOADED_FILES_MB'))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -83,7 +84,7 @@ class FileCRUD:
             description=file_data.description,
             owner_id=current_user.id,
             content_type=file_data.file.content_type,
-            file_size='15 MB'  # todo check file_size
+            file_size_bytes=file_data.file_size_bytes
         )
 
         if not os.path.exists(UPLOAD_DIR):

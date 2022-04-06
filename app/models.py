@@ -31,6 +31,6 @@ class File(Base):
     # owner_id = Column(UUID, ForeignKey("users.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
     content_type = Column(String)
-    file_size = Column(String)
+    file_size_bytes = Column(String)
 
     owner = relationship("User", back_populates="files")

@@ -36,11 +36,11 @@ class UserRead(UserBase):
 
 class FileBase(BaseModel):
     description: Optional[str] = None
+    file_size_bytes: str
 
 
 class FileCreate(FileBase):
     file: UploadFile = File_(...)
-    pass
 
 
 class FileRead(FileBase):
@@ -48,7 +48,6 @@ class FileRead(FileBase):
     filename: str
     file_dir: str
     content_type: str
-    file_size: str
     owner_id: int
 
     class Config:

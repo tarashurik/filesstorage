@@ -1,3 +1,5 @@
+import sys
+
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional
@@ -10,7 +12,7 @@ from auth import (
     get_current_user
 )
 from schemas import UserRead, UserCreate, FileRead, FileCreate
-from crud import UserCRUD, FileCRUD, UPLOAD_DIR
+from crud import UserCRUD, FileCRUD, UPLOAD_DIR, MAX_SIZE_MB
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
@@ -75,6 +77,16 @@ def upload_file(description: Optional[str] = Form(None),
                 files: FileCRUD = Depends(),
                 current_user: UserRead = Depends(get_current_user)
                 ):
+
+    file_size_bytes = len(file.file.read())
+    file_size_mb = file_size_bytes/(1024*1024)
+
+    if file_size_mb > MAX_SIZE_MB:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Your file too big - {round(file_size_mb, 2)} MB, please, upload files less than {MAX_SIZE_MB} MB"
+        )
+
     db_file = files.read_by_filename(filename=file.filename)
 
     if db_file and f'{db_file.file_dir}/{db_file.filename}' == f'{UPLOAD_DIR}/{current_user.id}/{db_file.filename}':
@@ -83,6 +95,6 @@ def upload_file(description: Optional[str] = Form(None),
             detail="File with same name already uploaded"
         )
 
-    file_data = FileCreate(description=description, file=file)
+    file_data = FileCreate(description=description, file=file, file_size_bytes=file_size_bytes)
     db_file = files.create(file_data=file_data, current_user=current_user)
     return FileRead.from_orm(db_file)
