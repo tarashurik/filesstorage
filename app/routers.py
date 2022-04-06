@@ -30,19 +30,19 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = De
     return create_token(user.username)
 
 
-@router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, users: UserCRUD = Depends()):
     db_user = users.read_by_username(username=user.username)
     if db_user:
         raise HTTPException(
             status_code=400,
-            detail="Email already registered"
+            detail="Username already registered"
         )
     db_user = users.create(user)
     return UserRead.from_orm(db_user)
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/logined_user", response_model=UserRead)
 def get_login_user(current_user: UserRead = Depends(get_current_user)):
     print(current_user)
     return current_user
