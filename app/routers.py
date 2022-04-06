@@ -97,14 +97,31 @@ def upload_file(description: Optional[str] = Form(None),
 @files_router.get("/")
 def get_user_files(current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
     db_files = files.read_current_user_all(current_user=current_user)
-    print(db_files)
-    if not db_files:
+    if not list(db_files):
         raise HTTPException(
             status_code=404,
-            detail="Files not found"
+            detail="Files not found. There are no files in your repository"
         )
     files_dict = dict()
     for db_file in db_files:
         files_dict[db_file.filename] = FileRead.from_orm(db_file)
     content = jsonable_encoder(files_dict)
     return JSONResponse(content=content)
+
+
+@files_router.delete("/{filename}")
+def delete_file(filename: str, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
+    db_files = files.read_current_user_all(current_user=current_user)
+    if not list(db_files):
+        raise HTTPException(
+            status_code=404,
+            detail="Files not found. There are no files in your repository"
+        )
+    for db_file in db_files:
+        if db_file.filename == filename:
+            files.delete_file_by_filename(current_user=current_user, filename=filename)
+            return f'File {filename} successfully deleted'
+    raise HTTPException(
+        status_code=404,
+        detail=f'File "{filename}" not found. There are no file with such name in your repository'
+    )

@@ -75,6 +75,11 @@ class FileCRUD:
         query = self.db.query(File)
         return query.filter(File.filename == filename).first()
 
+    def delete_file_by_filename(self, current_user: UserRead, filename: str) -> None:
+        file_to_delete = self.db.query(File).filter(File.owner_id == current_user.id, File.filename == filename)
+        file_to_delete.delete()
+        self.db.commit()
+
     def create(self, file_data: FileCreate, current_user: UserRead) -> File:
 
         db_file = File(
