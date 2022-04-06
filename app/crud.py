@@ -1,13 +1,13 @@
-from typing import List
 from uuid import UUID
 
+from fastapi import UploadFile, File as File_
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 
-from models import User
+from models import User, File
 from dependencies import get_db
-from schemas import UserCreate
+from schemas import UserCreate, UserRead, FileCreate
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -18,7 +18,7 @@ class UserCRUD:
         self.db = db
 
     # def read(self, uuid: UUID) -> User:
-    def read(self, user_id: int) -> User:
+    def read_by_id(self, user_id: int) -> User:
         query = self.db.query(User)
         return query.filter(User.id == user_id).first()
 
@@ -54,3 +54,34 @@ class UserCRUD:
         self.db.refresh(db_user)
 
         return db_user
+
+
+class FileCRUD:
+    def __init__(self, db: Session = Depends(get_db)):
+        self.db = db
+
+    def read_by_id(self, file_id: int) -> File:
+        query = self.db.query(File)
+        return query.filter(File.id == file_id).first()
+
+    def read_by_filename(self, filename: str):
+        query = self.db.query(File)
+        return query.filter(File.filename == filename).first()
+
+    def create(self, file_data: FileCreate,
+               current_user: UserRead,
+               ) -> File:
+
+        db_file = File(
+            filename=file_data.file.filename,
+            description=file_data.description,
+            owner_id=current_user.id,
+            content_type=file_data.file.content_type,
+            file_size='15 MB'  # todo check file_size
+        )
+
+        self.db.add(db_file)
+        self.db.commit()
+        self.db.refresh(db_file)
+
+        return db_file

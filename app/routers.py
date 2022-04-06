@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import parse_obj_as
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from auth import (
@@ -10,11 +10,12 @@ from auth import (
     create_token,
     get_current_user
 )
-from schemas import UserRead, UserCreate
-from crud import UserCRUD
+from schemas import UserRead, UserCreate, FileRead, FileCreate
+from crud import UserCRUD, FileCRUD
 
 
-router = APIRouter(prefix="/users", tags=["users"])
+users_router = APIRouter(prefix="/users", tags=["users"])
+files_router = APIRouter(prefix="/files", tags=["files"])
 
 
 # @router.get("/", response_model=List[UserRead])
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 #     db_speedsters = speedsters.all(skip=skip, max=max)
 #     return parse_obj_as(List[UserRead], db_speedsters)
 
-@router.post('/token')
+@users_router.post('/token')
 def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
     user = authenticate_user(form_data.username, form_data.password, users)
     if not user:
@@ -30,7 +31,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = De
     return create_token(user.username)
 
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@users_router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, users: UserCRUD = Depends()):
     db_user = users.read_by_username(username=user.username)
     if db_user:
@@ -42,13 +43,13 @@ def create_user(user: UserCreate, users: UserCRUD = Depends()):
     return UserRead.from_orm(db_user)
 
 
-@router.get("/logined_user", response_model=UserRead)
+@users_router.get("/logined_user", response_model=UserRead)
 def get_login_user(current_user: UserRead = Depends(get_current_user)):
     print(current_user)
     return current_user
 
 
-@router.get("/{username}", response_model=UserRead)
+@users_router.get("/{username}", response_model=UserRead)
 def get_user(username: str, users: UserCRUD = Depends()):
     db_user = users.read_by_username(username)
     if db_user is None:
@@ -57,3 +58,21 @@ def get_user(username: str, users: UserCRUD = Depends()):
             detail="User not found"
         )
     return UserRead.from_orm(db_user)
+
+
+@files_router.post("/upload", response_model=FileRead)
+def upload_file(description: Optional[str] = Form(None),
+                file: UploadFile = File_(...),
+                files: FileCRUD = Depends(),
+                current_user: UserRead = Depends(get_current_user)
+                ):
+    db_file = files.read_by_filename(filename=file.filename)
+
+    if db_file and current_user.id == db_file.owner_id:
+        raise HTTPException(
+            status_code=400,
+            detail="File with same name already uploaded"
+        )
+    file_data = FileCreate(description=description, file=file)
+    db_file = files.create(file_data=file_data, current_user=current_user)
+    return FileRead.from_orm(db_file)

@@ -1,5 +1,6 @@
 from typing import Optional
 
+from fastapi import UploadFile, File as File_
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -38,11 +39,15 @@ class FileBase(BaseModel):
 
 
 class FileCreate(FileBase):
+    file: UploadFile = File_(...)
     pass
 
 
 class FileRead(FileBase):
     id: int
+    filename: str
+    content_type: str
+    file_size: str
     owner_id: int
 
     class Config:
