@@ -5,8 +5,10 @@ from typing import List
 from uuid import UUID
 
 from auth import (
-    authenticate_user, credentials_error,
+    authenticate_user,
+    credentials_error,
     create_token,
+    get_current_user
 )
 from schemas import UserRead, UserCreate
 from crud import UserCRUD
@@ -31,25 +33,27 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = De
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, users: UserCRUD = Depends()):
     db_user = users.read_by_username(username=user.username)
-
     if db_user:
         raise HTTPException(
             status_code=400,
             detail="Email already registered"
         )
-
     db_user = users.create(user)
     return UserRead.from_orm(db_user)
+
+
+@router.get("/me", response_model=UserRead)
+def get_login_user(current_user: UserRead = Depends(get_current_user)):
+    print(current_user)
+    return current_user
 
 
 @router.get("/{username}", response_model=UserRead)
 def get_user(username: str, users: UserCRUD = Depends()):
     db_user = users.read_by_username(username)
-
     if db_user is None:
         raise HTTPException(
             status_code=404,
             detail="User not found"
         )
-
     return UserRead.from_orm(db_user)
