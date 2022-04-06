@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import parse_obj_as
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from auth import (
@@ -11,7 +10,7 @@ from auth import (
     get_current_user
 )
 from schemas import UserRead, UserCreate, FileRead, FileCreate
-from crud import UserCRUD, FileCRUD
+from crud import UserCRUD, FileCRUD, UPLOAD_DIR
 
 
 users_router = APIRouter(prefix="/users", tags=["users"])
@@ -68,11 +67,12 @@ def upload_file(description: Optional[str] = Form(None),
                 ):
     db_file = files.read_by_filename(filename=file.filename)
 
-    if db_file and current_user.id == db_file.owner_id:
+    if db_file and f'{db_file.file_dir}/{db_file.filename}' == f'{UPLOAD_DIR}/{current_user.id}/{db_file.filename}':
         raise HTTPException(
             status_code=400,
             detail="File with same name already uploaded"
         )
+
     file_data = FileCreate(description=description, file=file)
     db_file = files.create(file_data=file_data, current_user=current_user)
     return FileRead.from_orm(db_file)

@@ -26,6 +26,7 @@ class File(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     filename = Column(String)
+    file_dir = Column(String)
     description = Column(String(100))
     # owner_id = Column(UUID, ForeignKey("users.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))

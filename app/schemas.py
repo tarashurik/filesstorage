@@ -46,6 +46,7 @@ class FileCreate(FileBase):
 class FileRead(FileBase):
     id: int
     filename: str
+    file_dir: str
     content_type: str
     file_size: str
     owner_id: int

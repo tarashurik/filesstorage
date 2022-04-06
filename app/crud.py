@@ -1,14 +1,21 @@
-from uuid import UUID
+import os
+import shutil
 
+from uuid import UUID
 from fastapi import UploadFile, File as File_
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+from typing import Optional
+from dotenv import load_dotenv
 
 from models import User, File
 from dependencies import get_db
 from schemas import UserCreate, UserRead, FileCreate
 
+load_dotenv()
+
+UPLOAD_DIR = os.environ.get('UPLOAD_FILES_DIR')
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -17,12 +24,12 @@ class UserCRUD:
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
 
-    # def read(self, uuid: UUID) -> User:
-    def read_by_id(self, user_id: int) -> User:
+    # def read(self, uuid: UUID) -> Optional[User]:
+    def read_by_id(self, user_id: int) -> Optional[User]:
         query = self.db.query(User)
         return query.filter(User.id == user_id).first()
 
-    def read_by_username(self, username: str):
+    def read_by_username(self, username: str) -> Optional[User]:
         query = self.db.query(User)
         return query.filter(User.username == username).first()
 
@@ -60,25 +67,31 @@ class FileCRUD:
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
 
-    def read_by_id(self, file_id: int) -> File:
+    def read_by_id(self, file_id: int) -> Optional[File]:
         query = self.db.query(File)
         return query.filter(File.id == file_id).first()
 
-    def read_by_filename(self, filename: str):
+    def read_by_filename(self, filename: str) -> Optional[File]:
         query = self.db.query(File)
         return query.filter(File.filename == filename).first()
 
-    def create(self, file_data: FileCreate,
-               current_user: UserRead,
-               ) -> File:
+    def create(self, file_data: FileCreate, current_user: UserRead) -> File:
 
         db_file = File(
             filename=file_data.file.filename,
+            file_dir=f'{UPLOAD_DIR}/{current_user.id}',
             description=file_data.description,
             owner_id=current_user.id,
             content_type=file_data.file.content_type,
             file_size='15 MB'  # todo check file_size
         )
+
+        if not os.path.exists(UPLOAD_DIR):
+            os.mkdir(UPLOAD_DIR)
+        if not os.path.exists(db_file.file_dir):
+            os.mkdir(db_file.file_dir)
+        with open(f'{db_file.file_dir}/{db_file.filename}', 'wb') as new_file:
+            shutil.copyfileobj(file_data.file.file, new_file)
 
         self.db.add(db_file)
         self.db.commit()
