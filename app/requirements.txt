@@ -37,6 +37,6 @@ typing-extensions==4.1.1
 ujson==4.3.0
 urllib3==1.26.9
 uvicorn==0.15.0
-uvloop==0.16.0
+# uvloop==0.16.0 Windows don't supported
 watchgod==0.8.1
 websockets==10.2

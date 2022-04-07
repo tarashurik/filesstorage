@@ -1,22 +1,12 @@
-# pull official base image
-FROM python:3.8.10
+FROM python:3.8.10-slim-buster
 
-#RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+WORKDIR /usr/src
 
 ENV PYTHONUNBUFFERED 1
 
-# install system dependencies
-#RUN apt-get update \
-#  && apt-get -y install netcat gcc postgresql \
-#  && apt-get clean
-
-# install python dependencies
-RUN pip install --upgrade pip
-COPY requirements.txt .
+COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
-# add app
-#COPY . .
+COPY . .
 
 EXPOSE 8000
