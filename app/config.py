@@ -6,7 +6,7 @@ class DBSettings(BaseSettings):
     password: str
     database: str
     host: str
-    port: str
+    port: int
 
     class Config:
         env_prefix = "DB_"

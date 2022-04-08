@@ -2,10 +2,9 @@ version: "3.9"
 services:
 
   db:
-    image: bitnami/postgresql
-    container_name: postgresqldb
+    image: postgres:latest
     ports:
-      - "${DB_PORT}:5432"
+      - "5432:5432"
     environment:
       - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -16,7 +15,7 @@ services:
     container_name: filestorageapp
     command: uvicorn main:app --host=0.0.0.0 --reload
     volumes:
-      - .:/usr/src
+      - .:/usr/src/
     ports:
       - "8000:8000"
     depends_on:
