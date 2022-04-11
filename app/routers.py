@@ -14,13 +14,12 @@ from auth import (
 from schemas import UserRead, UserCreate, FileRead, FileCreate
 from crud import UserCRUD, FileCRUD, UPLOAD_DIR, MAX_SIZE_MB
 
-
 users_router = APIRouter(prefix="/users", tags=["users"])
 files_router = APIRouter(prefix="/files", tags=["files"])
 
 
 @users_router.post('/token')
-def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
     user = authenticate_user(form_data.username, form_data.password, users)
     if not user:
         raise credentials_error
@@ -28,12 +27,12 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = De
 
 
 @users_router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def create_user(username: str = Form(...),
-                email: str = Form(...),
-                first_name: Optional[str] = Form(None),
-                last_name: Optional[str] = Form(None),
-                password: str = Form(...),
-                users: UserCRUD = Depends()):
+async def create_user(username: str = Form(...),
+                      email: str = Form(...),
+                      first_name: Optional[str] = Form(None),
+                      last_name: Optional[str] = Form(None),
+                      password: str = Form(...),
+                      users: UserCRUD = Depends()):
     user = UserCreate(username=username,
                       email=email,
                       first_name=first_name,
@@ -50,12 +49,12 @@ def create_user(username: str = Form(...),
 
 
 @users_router.get("/logined_user", response_model=UserRead)
-def get_login_user(current_user: UserRead = Depends(get_current_user)):
+async def get_login_user(current_user: UserRead = Depends(get_current_user)):
     return current_user
 
 
 @users_router.get("/{username}", response_model=UserRead)
-def get_user(username: str, users: UserCRUD = Depends()):
+async def get_user(username: str, users: UserCRUD = Depends()):
     db_user = users.read_by_username(username)
     if db_user is None:
         raise HTTPException(
@@ -66,18 +65,17 @@ def get_user(username: str, users: UserCRUD = Depends()):
 
 
 @files_router.post("/upload", response_model=FileRead)
-def upload_file(description: Optional[str] = Form(None),
-                file: UploadFile = File_(...),
-                files: FileCRUD = Depends(),
-                current_user: UserRead = Depends(get_current_user)
-                ):
-
-    file_size_bytes = len(file.file.read())
-    file_size_mb = file_size_bytes/(1024*1024)
+async def upload_file(description: Optional[str] = Form(None),
+                      file: UploadFile = File_(...),
+                      files: FileCRUD = Depends(),
+                      current_user: UserRead = Depends(get_current_user)
+                      ):
+    file_size_bytes = len(await file.file.read())
+    file_size_mb = file_size_bytes / (1024 * 1024)
 
     if file_size_mb > MAX_SIZE_MB:
         raise HTTPException(
-            status_code=400,
+            status_code=422,
             detail=f"Your file too big - {round(file_size_mb, 2)} MB, please, upload files less than {MAX_SIZE_MB} MB"
         )
 
@@ -95,7 +93,7 @@ def upload_file(description: Optional[str] = Form(None),
 
 
 @files_router.get("/")
-def get_user_files(current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
+async def get_user_files(current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
     db_files = files.read_current_user_all(current_user=current_user)
     if not list(db_files):
         raise HTTPException(
@@ -110,7 +108,7 @@ def get_user_files(current_user: UserRead = Depends(get_current_user), files: Fi
 
 
 @files_router.delete("/{filename}")
-def delete_file(filename: str, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
+async def delete_file(filename: str, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
     db_files = files.read_current_user_all(current_user=current_user)
     if not list(db_files):
         raise HTTPException(
