@@ -1,4 +1,3 @@
-# import uvicorn
 import time
 
 from fastapi import FastAPI
@@ -19,7 +18,3 @@ while True:
 app = FastAPI()
 app.include_router(users_router)
 app.include_router(files_router)
-
-# if __name__ == '__main__':
-#     reload_dirs = ['./..']
-#     uvicorn.run('main:app', reload=True, reload_dirs=reload_dirs)

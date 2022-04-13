@@ -3,7 +3,6 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional
-# from uuid import UUID
 
 from auth import (
     authenticate_user,

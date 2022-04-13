@@ -1,7 +1,6 @@
 import os
 import shutil
 
-# from uuid import UUID
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -24,7 +23,6 @@ class UserCRUD:
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
 
-    # def read(self, uuid: UUID) -> Optional[User]:
     def read_by_id(self, user_id: int) -> Optional[User]:
         query = self.db.query(User)
         return query.filter(User.id == user_id).first()
