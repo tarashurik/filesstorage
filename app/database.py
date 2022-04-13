@@ -6,14 +6,11 @@ from dependencies import get_db_settings
 
 settings = get_db_settings()
 
-# SQLALCHEMY_DATABASE_URL = \
-#     f"postgresql://{settings.username}:{settings.password}@{settings.host}:{settings.port}/{settings.database}"
 SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.username}:{settings.password}@db/{settings.database}"
-
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
+# Use next code if you need sqlite DB
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-#
 # engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

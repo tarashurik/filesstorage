@@ -2,7 +2,6 @@ from typing import Optional
 
 from fastapi import UploadFile, File as File_
 from pydantic import BaseModel
-# from uuid import UUID
 
 
 class Token(BaseModel):
@@ -26,7 +25,6 @@ class UserCreate(UserBase):
 
 
 class UserRead(UserBase):
-    # id: UUID
     id: int
     hashed_password: str
 
@@ -37,6 +35,7 @@ class UserRead(UserBase):
 class FileBase(BaseModel):
     description: Optional[str] = None
     file_size_bytes: str
+    filehash: str
 
 
 class FileCreate(FileBase):

@@ -1,7 +1,6 @@
 import os
 import shutil
 
-# from uuid import UUID
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -24,7 +23,6 @@ class UserCRUD:
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
 
-    # def read(self, uuid: UUID) -> Optional[User]:
     def read_by_id(self, user_id: int) -> Optional[User]:
         query = self.db.query(User)
         return query.filter(User.id == user_id).first()
@@ -75,10 +73,15 @@ class FileCRUD:
         query = self.db.query(File)
         return query.filter(File.filename == filename).first()
 
+    def read_by_filehash(self, filehash: str) -> Optional[File]:
+        query = self.db.query(File)
+        return query.filter(File.filehash == filehash).first()
+
     def delete_file_by_filename(self, current_user: UserRead, filename: str) -> None:
         file_to_delete = self.db.query(File).filter(File.owner_id == current_user.id, File.filename == filename)
         file_to_delete.delete()
         self.db.commit()
+        os.remove(f'{UPLOAD_DIR}/{current_user.id}/{filename}')
 
     def create(self, file_data: FileCreate, current_user: UserRead) -> File:
 
@@ -88,7 +91,8 @@ class FileCRUD:
             description=file_data.description,
             owner_id=current_user.id,
             content_type=file_data.file.content_type,
-            file_size_bytes=file_data.file_size_bytes
+            file_size_bytes=file_data.file_size_bytes,
+            filehash=file_data.filehash
         )
 
         if not os.path.exists(UPLOAD_DIR):

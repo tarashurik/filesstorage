@@ -1,9 +1,10 @@
+import hashlib
+
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional
-# from uuid import UUID
 
 from auth import (
     authenticate_user,
@@ -16,6 +17,11 @@ from crud import UserCRUD, FileCRUD, UPLOAD_DIR, MAX_SIZE_MB
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 files_router = APIRouter(prefix="/files", tags=["files"])
+
+
+def hash_file(file):
+    hash_md5 = hashlib.md5(file)
+    return hash_md5.hexdigest()
 
 
 @users_router.post('/token')
@@ -70,7 +76,8 @@ async def upload_file(description: Optional[str] = Form(None),
                       files: FileCRUD = Depends(),
                       current_user: UserRead = Depends(get_current_user)
                       ):
-    file_size_bytes = len(await file.file.read())
+    read_file = file.file.read()
+    file_size_bytes = len(read_file)
     file_size_mb = file_size_bytes / (1024 * 1024)
 
     if file_size_mb > MAX_SIZE_MB:
@@ -79,15 +86,22 @@ async def upload_file(description: Optional[str] = Form(None),
             detail=f"Your file too big - {round(file_size_mb, 2)} MB, please, upload files less than {MAX_SIZE_MB} MB"
         )
 
-    db_file = files.read_by_filename(filename=file.filename)
+    filehash = hash_file(read_file)
+    db_file_by_filehash = files.read_by_filehash(filehash=filehash)
+    if db_file_by_filehash:
+        raise HTTPException(
+            status_code=400,
+            detail="You already have File with same content"
+        )
 
+    db_file = files.read_by_filename(filename=file.filename)
     if db_file and f'{db_file.file_dir}/{db_file.filename}' == f'{UPLOAD_DIR}/{current_user.id}/{db_file.filename}':
         raise HTTPException(
             status_code=400,
-            detail="File with same name already uploaded"
+            detail="You already had File with same name"
         )
 
-    file_data = FileCreate(description=description, file=file, file_size_bytes=file_size_bytes)
+    file_data = FileCreate(description=description, file=file, file_size_bytes=file_size_bytes, filehash=filehash)
     db_file = files.create(file_data=file_data, current_user=current_user)
     return FileRead.from_orm(db_file)
 
