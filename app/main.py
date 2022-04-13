@@ -6,6 +6,7 @@ from sqlalchemy.exc import OperationalError
 from database import Base, engine
 from routers import users_router, files_router
 
+
 while True:
     try:
         Base.metadata.create_all(bind=engine)

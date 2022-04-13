@@ -35,6 +35,7 @@ class UserRead(UserBase):
 class FileBase(BaseModel):
     description: Optional[str] = None
     file_size_bytes: str
+    filehash: str
 
 
 class FileCreate(FileBase):
