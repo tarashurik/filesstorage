@@ -1,15 +1,4 @@
-import pytest
-
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from main import app
-from dependencies import get_db
-from database import Base
-
-
-test_user_data = {
+TEST_USER_DATA = {
     "username": "admin",
     "email": "admin@admin.com",
     "first_name": None,
@@ -18,32 +7,21 @@ test_user_data = {
 }
 
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:postgres@0.0.0.0:5432/db"
-
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@pytest.fixture()
-def test_db():
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
-
-def test_create_user(test_db):
-    response = client.post("/users/register", data=test_user_data)
+def test_create_user(client):
+    response = client.post("/users/register", data=TEST_USER_DATA)
     assert response.status_code == 201
+
+
+def test_get_token(add_user, client):
+    response = client.post("/users/token", data=TEST_USER_DATA)
+    assert response.status_code == 200
+
+
+def test_get_user_by_username(add_user, client):
+    response = client.get(f"/users/{TEST_USER_DATA['username']}")
+    assert response.status_code == 200
+
+
+def test_login(add_user, user_token, client):
+    response = client.get("/users/logined_user", headers={'Authorization': f'Bearer {user_token}'})
+    assert response.status_code == 200
