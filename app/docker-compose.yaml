@@ -10,13 +10,13 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_DATABASE}
 
-  filestorageapp:
-    build: .
-    container_name: filestorageapp
-    command: uvicorn main:app --host=0.0.0.0 --reload
-    volumes:
-      - .:/usr/src/
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
+#  filestorageapp:
+#    build: .
+#    container_name: filestorageapp
+#    command: uvicorn main:app --host=0.0.0.0 --reload
+#    volumes:
+#      - .:/usr/src/
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - db
