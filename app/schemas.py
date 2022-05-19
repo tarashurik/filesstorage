@@ -34,7 +34,7 @@ class UserRead(UserBase):
 
 class FileBase(BaseModel):
     description: Optional[str] = None
-    file_size_bytes: str
+    file_size_bytes: int
     filehash: str
 
 

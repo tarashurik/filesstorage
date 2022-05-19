@@ -28,7 +28,7 @@ UPLOAD_DIR = 'media'
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:postgres@0.0.0.0:5432/db"
+SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:postgres@db/db"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

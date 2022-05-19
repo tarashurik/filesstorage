@@ -1,4 +1,5 @@
 import hashlib
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
 from fastapi.encoders import jsonable_encoder
@@ -13,23 +14,32 @@ from auth import (
     get_current_user
 )
 from schemas import UserRead, UserCreate, FileRead, FileCreate
-from crud import UserCRUD, FileCRUD, UPLOAD_DIR, MAX_SIZE_MB
+from crud import UserCRUD, FileCRUD
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 files_router = APIRouter(prefix="/files", tags=["files"])
 
+logger = logging.getLogger(__name__)
+
 
 def hash_file(file):
+    logger.info(msg="Start hashing file")
     hash_md5 = hashlib.md5(file)
-    return hash_md5.hexdigest()
+    file_hash = hash_md5.hexdigest()
+    logger.info(msg="End hashing file")
+    return file_hash
 
 
 @users_router.post('/token')
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
+    logger.info(msg="Start logining user")
     user = authenticate_user(form_data.username, form_data.password, users)
     if not user:
+        logger.error(msg="Start logining user")
         raise credentials_error
-    return create_token(user.username)
+    response = create_token(user.username)
+    logger.info(msg="End logining user")
+    return response
 
 
 @users_router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
@@ -39,6 +49,7 @@ async def create_user(username: str = Form(...),
                       last_name: Optional[str] = Form(None),
                       password: str = Form(...),
                       users: UserCRUD = Depends()):
+    logger.info(msg="Start registering user")
     user = UserCreate(username=username,
                       email=email,
                       first_name=first_name,
@@ -46,12 +57,15 @@ async def create_user(username: str = Form(...),
                       password=password)
     db_user = users.read_by_username(username=user.username)
     if db_user:
+        logger.error(msg=f"User with username '{user.username}' already registered")
         raise HTTPException(
             status_code=400,
             detail="Username already registered"
         )
     db_user = users.create(user)
-    return UserRead.from_orm(db_user)
+    response = UserRead.from_orm(db_user)
+    logger.info(msg="End registering user")
+    return response
 
 
 @users_router.get("/logined_user", response_model=UserRead)
@@ -61,12 +75,15 @@ async def get_login_user(current_user: UserRead = Depends(get_current_user)):
 
 @users_router.get("/{username}", response_model=UserRead)
 async def get_user(username: str, users: UserCRUD = Depends()):
+    logger.info(msg=f"Try to find user '{username}'")
     db_user = users.read_by_username(username)
     if db_user is None:
+        logger.error(msg=f"User '{username}' NOT found")
         raise HTTPException(
             status_code=404,
             detail="User not found"
         )
+    logger.info(msg=f"User '{username}' found")
     return UserRead.from_orm(db_user)
 
 
@@ -76,33 +93,15 @@ async def upload_file(description: Optional[str] = Form(None),
                       files: FileCRUD = Depends(),
                       current_user: UserRead = Depends(get_current_user)
                       ):
+    logger.info(msg="Start upload file")
+
     read_file = file.file.read()
     file_size_bytes = len(read_file)
-    file_size_mb = file_size_bytes / (1024 * 1024)
-
-    if file_size_mb > MAX_SIZE_MB:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Your file too big - {round(file_size_mb, 2)} MB, please, upload files less than {MAX_SIZE_MB} MB"
-        )
-
     filehash = hash_file(read_file)
-    db_file_by_filehash = files.read_by_filehash(filehash=filehash)
-    if db_file_by_filehash:
-        raise HTTPException(
-            status_code=400,
-            detail="You already have File with same content"
-        )
-
-    db_file = files.read_by_filename(filename=file.filename)
-    if db_file and f'{db_file.file_dir}/{db_file.filename}' == f'{UPLOAD_DIR}/{current_user.id}/{db_file.filename}':
-        raise HTTPException(
-            status_code=400,
-            detail="You already had File with same name"
-        )
 
     file_data = FileCreate(description=description, file=file, file_size_bytes=file_size_bytes, filehash=filehash)
     db_file = files.create(file_data=file_data, current_user=current_user)
+    logger.info(msg="End upload file")
     return FileRead.from_orm(db_file)
 
 
@@ -121,8 +120,8 @@ async def get_user_files(current_user: UserRead = Depends(get_current_user), fil
     return JSONResponse(content=content)
 
 
-@files_router.delete("/{filename}")
-async def delete_file(filename: str, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
+@files_router.delete("/{id}")
+async def delete_file(id: int, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
     db_files = files.read_current_user_all(current_user=current_user)
     if not list(db_files):
         raise HTTPException(
@@ -130,10 +129,10 @@ async def delete_file(filename: str, current_user: UserRead = Depends(get_curren
             detail="Files not found. There are no files in your repository"
         )
     for db_file in db_files:
-        if db_file.filename == filename:
-            files.delete_file_by_filename(current_user=current_user, filename=filename)
+        if db_file.id == id:
+            filename = files.delete_file_by_id(current_user=current_user, id=id)
             return f'File {filename} successfully deleted'
     raise HTTPException(
         status_code=404,
-        detail=f"File '{filename}' not found. There are no file with such name in your repository"
+        detail=f"File with id='{id}' not found. There are no file with such id in your repository"
     )

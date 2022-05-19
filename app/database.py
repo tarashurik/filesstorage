@@ -6,7 +6,7 @@ from dependencies import get_db_settings
 
 settings = get_db_settings()
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.username}:{settings.password}@0.0.0.0:5432/{settings.database}"
+SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.username}:{settings.password}@db/{settings.database}"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 # Use next code if you need sqlite DB

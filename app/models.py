@@ -26,7 +26,7 @@ class File(Base):
     description = Column(String(100))
     owner_id = Column(Integer, ForeignKey("users.id"))
     content_type = Column(String)
-    file_size_bytes = Column(String)
+    file_size_bytes = Column(Integer)
     filehash = Column(String)
 
     owner = relationship("User", back_populates="files")
