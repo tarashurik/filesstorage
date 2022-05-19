@@ -16,6 +16,7 @@ from auth import (
 from schemas import UserRead, UserCreate, FileRead, FileCreate
 from crud import UserCRUD, FileCRUD
 
+
 users_router = APIRouter(prefix="/users", tags=["users"])
 files_router = APIRouter(prefix="/files", tags=["files"])
 
@@ -107,30 +108,24 @@ async def upload_file(description: Optional[str] = Form(None),
 
 @files_router.get("/")
 async def get_user_files(current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
-    db_files = files.read_current_user_all(current_user=current_user)
-    if not list(db_files):
-        raise HTTPException(
-            status_code=404,
-            detail="Files not found. There are no files in your repository"
-        )
-    files_dict = dict()
-    for db_file in db_files:
-        files_dict[db_file.filename] = FileRead.from_orm(db_file)
-    content = jsonable_encoder(files_dict)
+    db_files_dict = files.read_current_user_all_files(current_user=current_user)
+    logger.debug(msg="Start encode content to JSON")
+    content = jsonable_encoder(db_files_dict)
+    logger.debug(msg="End encode content to JSON")
     return JSONResponse(content=content)
 
 
-@files_router.delete("/{id}")
-async def delete_file(id: int, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
-    db_files = files.read_current_user_all(current_user=current_user)
+@files_router.delete("/{file_id}")
+async def delete_file(file_id: int, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
+    db_files = files.read_current_user_all_files(current_user=current_user)
     if not list(db_files):
         raise HTTPException(
             status_code=404,
             detail="Files not found. There are no files in your repository"
         )
     for db_file in db_files:
-        if db_file.id == id:
-            filename = files.delete_file_by_id(current_user=current_user, id=id)
+        if db_file.id == file_id:
+            filename = files.delete_file_by_id(current_user=current_user, file_id=file_id)
             return f'File {filename} successfully deleted'
     raise HTTPException(
         status_code=404,

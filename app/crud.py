@@ -6,12 +6,12 @@ from fastapi import HTTPException
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from typing import Optional, List
+from typing import Optional
 from dotenv import load_dotenv
 
 from models import User, File
 from dependencies import get_db
-from schemas import UserCreate, UserRead, FileCreate
+from schemas import UserCreate, UserRead, FileCreate, FileRead
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -64,24 +64,29 @@ class FileCRUD:
     def __init__(self, db: Session = Depends(get_db)):
         self.db = db
 
-    def read_current_user_all(self, current_user: UserRead) -> Optional[List[File]]:
-        query = self.db.query(File)
-        return query.filter(File.owner_id == current_user.id)
+    def read_current_user_all_files(self, current_user: UserRead) -> Optional[dict]:
+        logger.info(msg="Start reading current user's all files")
+        db_files = self.db.query(File).filter(File.owner_id == current_user.id)
+        db_files_dict = {db_file.filename: FileRead.from_orm(db_file) for db_file in db_files}
+        if not db_files_dict:
+            logger.error(msg="Files not found. There are no files in user's repository")
+            raise HTTPException(
+                        status_code=404,
+                        detail="Files not found. There are no files in your repository"
+                    )
+        logger.info(msg="End reading current user's all files")
+        return db_files_dict
 
     def read_by_id(self, file_id: int) -> Optional[File]:
         query = self.db.query(File)
         return query.filter(File.id == file_id).first()
 
-    # def read_by_filename(self, filename: str) -> Optional[File]:
-    #     query = self.db.query(File)
-    #     return query.filter(File.filename == filename).first()
-
     def read_by_filehash(self, filehash: str) -> Optional[File]:
         query = self.db.query(File)
         return query.filter(File.filehash == filehash).first()
 
-    def delete_file_by_id(self, current_user: UserRead, id: int) -> None:
-        file_to_delete = self.db.query(File).filter(File.owner_id == current_user.id, File.id == id)
+    def delete_file_by_id(self, current_user: UserRead, file_id: int) -> None:
+        file_to_delete = self.db.query(File).filter(File.owner_id == current_user.id, File.id == file_id)
         filename = file_to_delete[0].filename
         file_to_delete.delete()
         self.db.commit()
