@@ -85,12 +85,20 @@ class FileCRUD:
         query = self.db.query(File)
         return query.filter(File.filehash == filehash).first()
 
-    def delete_file_by_id(self, current_user: UserRead, file_id: int) -> None:
+    def delete_file_by_id(self, current_user: UserRead, file_id: int):
+        logger.info(msg=f"Start deleting file with id={file_id}")
         file_to_delete = self.db.query(File).filter(File.owner_id == current_user.id, File.id == file_id)
+        if not file_to_delete:
+            logger.error(msg=f"File with id='{id}' not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"File with id='{id}' not found. There are no file with such id in your repository"
+            )
         filename = file_to_delete[0].filename
         file_to_delete.delete()
         self.db.commit()
         os.remove(f'{UPLOAD_DIR}/{current_user.id}/{filename}')
+        logger.info(msg=f"End deleting file with id={file_id}")
         return filename
 
     def create(self, file_data: FileCreate, current_user: UserRead) -> File:

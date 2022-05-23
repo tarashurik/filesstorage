@@ -117,17 +117,5 @@ async def get_user_files(current_user: UserRead = Depends(get_current_user), fil
 
 @files_router.delete("/{file_id}")
 async def delete_file(file_id: int, current_user: UserRead = Depends(get_current_user), files: FileCRUD = Depends()):
-    db_files = files.read_current_user_all_files(current_user=current_user)
-    if not list(db_files):
-        raise HTTPException(
-            status_code=404,
-            detail="Files not found. There are no files in your repository"
-        )
-    for db_file in db_files:
-        if db_file.id == file_id:
-            filename = files.delete_file_by_id(current_user=current_user, file_id=file_id)
-            return f'File {filename} successfully deleted'
-    raise HTTPException(
-        status_code=404,
-        detail=f"File with id='{id}' not found. There are no file with such id in your repository"
-    )
+    deleted_filename = files.delete_file_by_id(current_user=current_user, file_id=file_id)
+    return f'File {deleted_filename} successfully deleted'
