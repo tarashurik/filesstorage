@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 import logging
@@ -20,6 +21,14 @@ UPLOAD_DIR = os.environ.get('UPLOAD_FILES_DIR')
 MAX_SIZE_MB = int(os.environ.get('MAX_SIZE_UPLOADED_FILES_MB'))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_file(file):
+    logger.info(msg="Start hashing file")
+    hash_md5 = hashlib.md5(file)
+    file_hash = hash_md5.hexdigest()
+    logger.info(msg="End hashing file")
+    return file_hash
 
 
 class UserCRUD:
@@ -101,16 +110,24 @@ class FileCRUD:
         logger.info(msg=f"End deleting file with id={file_id}")
         return filename
 
-    def create(self, file_data: FileCreate, current_user: UserRead) -> File:
+    async def create(self, file_data: FileCreate, current_user: UserRead) -> File:
         logger.info(msg="Start saving file")
+        logger.info(msg="Start reading file")
+
+        read_file = await file_data.file.read()
+        logger.info(msg="End reading file")
+
+        file_size_bytes = len(read_file)
+        filehash = hash_file(read_file)
+
         db_file = File(
             filename=file_data.file.filename,
             file_dir=f'{UPLOAD_DIR}/{current_user.id}',
             description=file_data.description,
             owner_id=current_user.id,
             content_type=file_data.file.content_type,
-            file_size_bytes=file_data.file_size_bytes,
-            filehash=file_data.filehash
+            file_size_bytes=file_size_bytes,
+            filehash=filehash
         )
 
         file_size_mb = db_file.file_size_bytes / (1024 * 1024)

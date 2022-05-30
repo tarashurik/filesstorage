@@ -1,4 +1,3 @@
-import hashlib
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
@@ -23,20 +22,12 @@ files_router = APIRouter(prefix="/files", tags=["files"])
 logger = logging.getLogger(__name__)
 
 
-def hash_file(file):
-    logger.info(msg="Start hashing file")
-    hash_md5 = hashlib.md5(file)
-    file_hash = hash_md5.hexdigest()
-    logger.info(msg="End hashing file")
-    return file_hash
-
-
 @users_router.post('/token')
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
     logger.info(msg="Start logining user")
     user = authenticate_user(form_data.username, form_data.password, users)
     if not user:
-        logger.error(msg="Start logining user")
+        logger.error(msg="User not found")
         raise credentials_error
     response = create_token(user.username)
     logger.info(msg="End logining user")
@@ -96,12 +87,11 @@ async def upload_file(description: Optional[str] = Form(None),
                       ):
     logger.info(msg="Start upload file")
 
-    read_file = file.file.read()
-    file_size_bytes = len(read_file)
-    filehash = hash_file(read_file)
+    file_data = FileCreate(description=description,
+                           file=file,
+                           )
 
-    file_data = FileCreate(description=description, file=file, file_size_bytes=file_size_bytes, filehash=filehash)
-    db_file = files.create(file_data=file_data, current_user=current_user)
+    db_file = await files.create(file_data=file_data, current_user=current_user)
     logger.info(msg="End upload file")
     return FileRead.from_orm(db_file)
 
