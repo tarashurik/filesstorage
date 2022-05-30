@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File as File_
@@ -20,6 +21,11 @@ users_router = APIRouter(prefix="/users", tags=["users"])
 files_router = APIRouter(prefix="/files", tags=["files"])
 
 logger = logging.getLogger(__name__)
+
+
+# function made to test async code
+async def async_print():
+    logger.warning("!!!async print here!!!")
 
 
 @users_router.post('/token')
@@ -86,12 +92,17 @@ async def upload_file(description: Optional[str] = Form(None),
                       current_user: UserRead = Depends(get_current_user)
                       ):
     logger.info(msg="Start upload file")
-
     file_data = FileCreate(description=description,
                            file=file,
                            )
-
-    db_file = await files.create(file_data=file_data, current_user=current_user)
+    # next code just test to run async code
+    main_loop = asyncio.get_event_loop()
+    tasks = [
+        asyncio.create_task(files.create(file_data=file_data, current_user=current_user)),
+        asyncio.create_task(async_print())
+    ]
+    result = await asyncio.gather(*tasks, loop=main_loop)
+    db_file = result[0]
     logger.info(msg="End upload file")
     return FileRead.from_orm(db_file)
 

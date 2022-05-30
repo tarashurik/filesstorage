@@ -37,11 +37,11 @@ class UserCRUD:
 
     def read_by_id(self, user_id: int) -> Optional[User]:
         query = self.db.query(User)
-        return query.filter(User.id == user_id).first()
+        return query.filter(User.id == user_id).one_or_none()
 
     def read_by_username(self, username: str) -> Optional[User]:
         query = self.db.query(User)
-        return query.filter(User.username == username).first()
+        return query.filter(User.username == username).one_or_none()
 
     @staticmethod
     def get_hashed_password(password: str) -> str:
@@ -75,7 +75,7 @@ class FileCRUD:
 
     def read_current_user_all_files(self, current_user: UserRead) -> Optional[dict]:
         logger.info(msg="Start reading current user's all files")
-        db_files = self.db.query(File).filter(File.owner_id == current_user.id)
+        db_files = self.db.query(File).filter(File.owner_id == current_user.id).all()
         db_files_dict = {db_file.filename: FileRead.from_orm(db_file) for db_file in db_files}
         if not db_files_dict:
             logger.error(msg="Files not found. There are no files in user's repository")
@@ -88,23 +88,24 @@ class FileCRUD:
 
     def read_by_id(self, file_id: int) -> Optional[File]:
         query = self.db.query(File)
-        return query.filter(File.id == file_id).first()
+        return query.filter(File.id == file_id).one_or_none()
 
     def read_by_filehash(self, filehash: str) -> Optional[File]:
         query = self.db.query(File)
-        return query.filter(File.filehash == filehash).first()
+        return query.filter(File.filehash == filehash).one_or_none()
 
     def delete_file_by_id(self, current_user: UserRead, file_id: int):
         logger.info(msg=f"Start deleting file with id={file_id}")
-        file_to_delete = self.db.query(File).filter(File.owner_id == current_user.id, File.id == file_id)
+        file_to_delete_query = self.db.query(File).filter(File.owner_id == current_user.id, File.id == file_id)
+        file_to_delete = file_to_delete_query.one_or_none()
         if not file_to_delete:
-            logger.error(msg=f"File with id='{id}' not found")
+            logger.error(msg=f"File with id={file_id} not found")
             raise HTTPException(
                 status_code=404,
-                detail=f"File with id='{id}' not found. There are no file with such id in your repository"
+                detail=f"File with id={file_id} not found. There are no file with such id in your repository"
             )
-        filename = file_to_delete[0].filename
-        file_to_delete.delete()
+        filename = file_to_delete.filename
+        file_to_delete_query.delete()
         self.db.commit()
         os.remove(f'{UPLOAD_DIR}/{current_user.id}/{filename}')
         logger.info(msg=f"End deleting file with id={file_id}")
@@ -113,7 +114,6 @@ class FileCRUD:
     async def create(self, file_data: FileCreate, current_user: UserRead) -> File:
         logger.info(msg="Start saving file")
         logger.info(msg="Start reading file")
-
         read_file = await file_data.file.read()
         logger.info(msg="End reading file")
 
