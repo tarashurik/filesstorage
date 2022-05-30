@@ -92,7 +92,7 @@ class FileCRUD:
 
     def read_by_filehash(self, filehash: str) -> Optional[File]:
         query = self.db.query(File)
-        return query.filter(File.filehash == filehash).one_or_none()
+        return query.filter(File.filehash == filehash)
 
     def delete_file_by_id(self, current_user: UserRead, file_id: int):
         logger.info(msg=f"Start deleting file with id={file_id}")
@@ -139,8 +139,8 @@ class FileCRUD:
                        f" please, upload files less than {MAX_SIZE_MB} MB"
             )
 
-        file_by_filehash = self.read_by_filehash(filehash=db_file.filehash)
-        if file_by_filehash:
+        file_by_filehash = self.read_by_filehash(filehash=db_file.filehash).filter(File.owner_id == current_user.id)
+        if file_by_filehash.one_or_none():
             logger.error(msg="File with same content have already uploaded")
             raise HTTPException(
                 status_code=400,
