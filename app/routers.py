@@ -49,13 +49,6 @@ async def create_user(username: str = Form(...),
                       first_name=first_name,
                       last_name=last_name,
                       password=password)
-    db_user = users.read_by_username(username=user.username)
-    if db_user:
-        logger.error(msg=f"User with username '{user.username}' already registered")
-        raise HTTPException(
-            status_code=400,
-            detail="Username already registered"
-        )
     db_user = users.create(user)
     response = UserRead.from_orm(db_user)
     logger.info(msg="End registering user")

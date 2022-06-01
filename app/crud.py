@@ -62,6 +62,14 @@ class UserCRUD:
             hashed_password=hashed_password
         )
 
+        check_exist_user = self.read_by_username(username=user.username)
+        if check_exist_user:
+            logger.error(msg=f"User with username '{user.username}' already registered")
+            raise HTTPException(
+                status_code=400,
+                detail="Username already registered"
+            )
+
         self.db.add(db_user)
         self.db.commit()
         self.db.refresh(db_user)
