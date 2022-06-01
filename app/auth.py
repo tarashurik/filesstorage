@@ -89,9 +89,9 @@ def authenticate_user(username: str, password: str, users: UserCRUD):
     user = users.read_by_username(username=username)
     if not user:
         logger.error(msg=f"Username '{username}' not found")
-        return False
+        raise credentials_error
     if not users.verify_password(password, user.hashed_password):
         logger.error(msg=f"Wrong password")
-        return False
+        raise credentials_error
     logger.info(msg="End authenticate_user")
     return user

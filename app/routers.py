@@ -9,7 +9,6 @@ from typing import Optional
 
 from auth import (
     authenticate_user,
-    credentials_error,
     create_token,
     get_current_user
 )
@@ -32,9 +31,6 @@ async def async_print():
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), users: UserCRUD = Depends()):
     logger.info(msg="Start logining user")
     user = authenticate_user(form_data.username, form_data.password, users)
-    if not user:
-        logger.error(msg="User not found")
-        raise credentials_error
     response = create_token(user.username)
     logger.info(msg="End logining user")
     return response
